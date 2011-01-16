@@ -40,8 +40,10 @@ class Autotest::Rspec2 < Autotest
   end
 
   def make_test_cmd(files_to_test)
+    rspec_options, bundle = remove_rspec_options!
+
     files_to_test.empty? ? '' :
-      "#{bundle_exec}#{ruby} #{require_rubygems}-S #{SPEC_PROGRAM} --tty #{normalize(files_to_test).keys.flatten.map { |f| "'#{f}'"}.join(' ')}"
+    "#{rspec_command(bundle)} #{rspec_options_string(rspec_options)} --tty #{normalize(files_to_test).keys.flatten.map { |f| "'#{f}'"}.join(' ')}"
   end
 
   def bundle_exec
@@ -63,4 +65,46 @@ class Autotest::Rspec2 < Autotest
     File.exists?('./Gemfile')
   end
 
+  private
+
+  # Sending RSpec command line options through Autotest.
+  # Requires that Autotest has options[:extras] available.
+  # For example:
+  #
+  #     $ autotest --extra t,my_tag
+  #
+  # This would send RSpec the option '-t my_tag'.
+  # It is also possible to send multiple options.
+  #
+  #     $ autotest -x t,my_tag -x format,documentation
+  #
+  # This gives '-t my_tag --format documentation.
+  # Using the 'rspec' command instead of 'bundle exec ...'
+  # is default. If you want to use 'bundle exec ...',
+  # you can pass 'bundle' as an option:
+  #
+  #    $ autotest -x bundle
+  #
+  def remove_rspec_options!
+    opts = self.options.delete(:extras)
+    return [] unless opts
+    bundle = opts.flatten.delete('bundle')
+    opts = opts.delete_if { |arr| arr[0] == 'bundle' }
+    [opts, bundle]
+  end
+
+  def rspec_command(bundle)
+    bundle ? "#{bundle_exec}#{ruby} #{require_rubygems}-S #{SPEC_PROGRAM}" : "rspec"
+  end
+
+  def rspec_options_string(opts)
+    return "" if opts.nil?
+
+    opts.inject("") do |string, arr|
+      option, value = arr[0], arr[1]
+      option_str = option.size == 1 ? "-#{option}" : "--#{option}"
+      value_str = value ? value : ""
+      string << "#{option_str} #{value} "
+    end
+  end
 end
