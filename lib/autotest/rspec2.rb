@@ -40,7 +40,7 @@ class Autotest::Rspec2 < Autotest
   end
 
   def make_test_cmd(files_to_test)
-    rspec_options, bundle = remove_rspec_options!
+    rspec_options, bundle = get_rspec_options
 
     files_to_test.empty? ? '' :
     "#{rspec_command(bundle)} #{rspec_options_string(rspec_options)} --tty #{normalize(files_to_test).keys.flatten.map { |f| "'#{f}'"}.join(' ')}"
@@ -78,15 +78,15 @@ class Autotest::Rspec2 < Autotest
   #
   #     $ autotest -x t,my_tag -x format,documentation
   #
-  # This gives '-t my_tag --format documentation.
+  # This gives '-t my_tag --format documentation'.
   # Using the 'rspec' command instead of 'bundle exec ...'
   # is default. If you want to use 'bundle exec ...',
   # you can pass 'bundle' as an option:
   #
   #    $ autotest -x bundle
   #
-  def remove_rspec_options!
-    opts = self.options.delete(:extras)
+  def get_rspec_options
+    opts = self.options[:extras].dup
     return [] unless opts
     bundle = opts.flatten.delete('bundle')
     opts = opts.delete_if { |arr| arr[0] == 'bundle' }
