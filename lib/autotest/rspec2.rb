@@ -86,7 +86,7 @@ class Autotest::Rspec2 < Autotest
   #    $ autotest -x bundle
   #
   def get_rspec_options
-    opts = self.options[:extras].dup
+    opts = self.options[:extras].dup if self.options[:extras]
     return [] unless opts
     bundle = opts.flatten.delete('bundle')
     opts = opts.delete_if { |arr| arr[0] == 'bundle' }
